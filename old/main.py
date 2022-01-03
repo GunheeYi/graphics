@@ -5,6 +5,11 @@ class XY:
         self.x = x
         self.y = y
 
+class Triangle:
+    def __init__(self, points):
+        # self.
+        pass
+
 WIDTH, HEIGHT = 100, 30
 
 SCREEN_BASE = [[' ' for _ in range(WIDTH)] for _ in range(HEIGHT)]
