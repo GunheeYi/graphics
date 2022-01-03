@@ -14,6 +14,19 @@ class XY {
     }
 }
 
+class Triangle {
+    constructor(p1, p2, p3) {
+        this.p1 = p1;
+        this.p2 = p2;
+        this.p3 = p3;
+    }
+    draw(c) {
+        fillLine(this.p1, this.p2, c);
+        fillLine(this.p2, this.p3, c);
+        fillLine(this.p3, this.p1, c);
+    }
+}
+
 class RGBA {
     constructor(r, g, b, a) {
         this.r = r;
@@ -33,8 +46,8 @@ CYAN = new RGBA(0, 255, 255, 255);
 MAGENTA = new RGBA(255, 0, 255, 255);
 YELLOW = new RGBA(255, 255, 0, 255);
 
-function swap(x, y) {
-    return [y, x];
+function intersection(xy1, xy2) {
+    
 }
 
 function clear() {
@@ -70,8 +83,8 @@ function fillLine(xy1, xy2, rgba) {
     if (x1==x2) fillCol(x1, y1, y2, rgba);
     if (y1==y2) fillRow(x1, x2, y1, rgba);
 
-    if (x1 > x2) [x1, x2] = swap(x1, x2);
-    if (y1 > y2) [y1, y2] = swap(y1, y2);
+    if (x1 > x2) [x1, x2] = [x2, x1];
+    if (y1 > y2) [y1, y2] = [y2, y1];
     let [xRange, yRange] = [x2-x1, y2-y1];
 
     if(Math.abs(x2-x1) >= Math.abs(y2-y1)) {
@@ -93,14 +106,15 @@ function show() {
 
 let F = 0;
 
+t1 = new Triangle(new XY(100, 100), new XY(300, 300), new XY(500, 700));
+
 function draw() {
-    fillLine(new XY(100, 100), new XY(200, 700), BLACK);
-    fillLine(new XY(520, 320), new XY(920, 270), BLACK);
-    fillLine(new XY(520, 540), new XY(430, 310), BLACK);
+    t1.draw(BLACK);
 }
 
 setInterval(() => {
     clear();
+    t1.draw(BLACK);
     draw();
     F++;
     show();
