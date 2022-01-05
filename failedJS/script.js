@@ -1,18 +1,44 @@
 document.addEventListener("DOMContentLoaded", function(){
 
+// constants
+const FPS = 30;
 const canvas = document.getElementById("canvas");
 const c = canvas.getContext('2d');
 const W = canvas.width;
 const H = canvas.height;
-console.log(W, H);
-let imageData = c.createImageData(W, H);
+const NEAR = 1;
+const FAR = 10;
 
-class XY {
+
+function bindKey(k, f) {
+    document.addEventListener('keydown', function(e) {
+        if (e.key == k) {
+            f(e);
+        }
+    });
+}
+
+bindKey("w", (e) => {
+    console.log("w");
+});
+bindKey("s", (e) => {
+    console.log("s");
+});
+bindKey("a", (e) => {
+    console.log("a");
+});
+bindKey("d", (e) => {
+    console.log("d");
+});
+
+class V3 {
     constructor(x, y) {
         this.x = x;
         this.y = y;
     }
 }
+
+let UP = new V3()
 
 class Triangle {
     constructor(p1, p2, p3) {
@@ -66,12 +92,12 @@ function fill(xy, rgba) {
 
 function fillRow(x1, x2, y, rgba) {
     for (let x = x1; x <= x2; x++) {
-        fill(XY(x,y), rgba);
+        fill(new V3(x,y), rgba);
     }
 }
 function fillCol(x, y1, y2, rgba) {
     for (let y = y1; y <= y2; y++) {
-        fill(XY(x,y), rgba);
+        fill(new V3(x,y), rgba);
     }
 }
 
@@ -90,12 +116,12 @@ function fillLine(xy1, xy2, rgba) {
     if(Math.abs(x2-x1) >= Math.abs(y2-y1)) {
         for (let x = x1; x <= x2; x++) {
             y = y1 + yRange * (x-x1) / xRange;
-            fill(new XY(x,y), rgba);
+            fill(new V3(x,y), rgba);
         }
     } else {
         for (let y = y1; y <= y2; y++) {
             x = x1 + xRange * (y-y1) / yRange;
-            fill(new XY(x,y), rgba);
+            fill(new V3(x,y), rgba);
         }
     }
 }
@@ -106,7 +132,7 @@ function show() {
 
 let F = 0;
 
-t1 = new Triangle(new XY(100, 100), new XY(300, 300), new XY(500, 700));
+t1 = new Triangle(new V3(100, 100), new V3(300, 300), new V3(500, 700));
 
 function draw() {
     t1.draw(BLACK);
@@ -118,7 +144,7 @@ setInterval(() => {
     draw();
     F++;
     show();
-}, 1000/10);
+}, 1000/FPS);
 
 });
 
