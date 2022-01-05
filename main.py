@@ -52,6 +52,16 @@ class Triangle:
     def __str__(self):
         return "Triangle: {}, {}, {}".format(self.p0, self.p1, self.p2)
 
+class Mesh:
+    def __init__(self, l):
+        self.l = l
+    def draw(self):
+        for el in self.l: el.draw()
+    def transformed(self, m):
+        return map(lambda _: _.transformed(), self.l)
+    def transform(self, m):
+        self = self.transformed(m)
+
 WIDTH, HEIGHT = 500, 500
 CANVAS = np.full((WIDTH, HEIGHT, 3), 255.0)
 
@@ -104,9 +114,8 @@ while running:
             running = False
     clear()
     t = time() - start
-    print(t)
     rad = t
-    m = [[cos(rad), -sin(rad), 0, 0], [sin(rad), cos(rad), 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]]
+    m = [[cos(rad), -sin(rad), 0, 50*t], [sin(rad), cos(rad), 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]]
     # m = [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]] 
     Triangle(V3(100, 100), V3(200, 300), V3(300, 200)).transformed(m).draw()
     surf = pygame.surfarray.make_surface(CANVAS.astype('uint8'))
