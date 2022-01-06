@@ -144,18 +144,25 @@ class World:
         self.objs = list()
         self.w, self.h = dimension[0], dimension[1]
         self.ar = self.w / self.h
-        self.fov = radians(90)
+        self.fov = radians(50)
         self.near = 0.5
         self.far = 10
+        self.zoom = 1
         pygame.init()
         self.display = pygame.display.set_mode((self.w, self.h))
         pygame.display.set_caption(title)
         self.canvas = np.full((self.w, self.h, 3), 255.0)
-        self.cam = V3(5, 5, 5)
+        self.cam = V3(3, 3, 3)
         self.forward = V3(-1, -1, -1).normed()
         self.upward = V3(-0.5, -0.5, 1).normed()
+        self.speed_move = 1.3
+        self.speed_rotate = 0.7
         self.runningg = True
         self.start = time()
+        self.time_last = self.start
+        self.font_l = pygame.font.SysFont( "applesdgothicneo", 30, True, False)
+        self.font_m = pygame.font.SysFont( "applesdgothicneo", 20, True, False)
+        self.font_s = pygame.font.SysFont( "applesdgothicneo", 10, True, False)
     def add(self, obj):
         self.objs.append(obj)
     def clear(self):
@@ -182,15 +189,17 @@ class World:
         if abs(xRange) >= abs(yRange):
             for x in range(min(x1,x2), max(x1,x2)+1):
                 y = y1 + yRange * (x-x1) / xRange
-                for dx in range(-1, 2):
-                    for dy in range(-1, 2):
-                        self.setPixel(x+dx,y+dy,rgb)
+                # for dx in range(-1, 2):
+                #     for dy in range(-1, 2):
+                #         self.setPixel(x+dx,y+dy,rgb)
+                self.setPixel(x,y,rgb)
         else:
             for y in range(min(y1,y2), max(y1,y2)+1):
                 x = x1 + xRange * (y-y1) / yRange
-                for dx in range(-1, 2):
-                    for dy in range(-1, 2):
-                        self.setPixel(x+dx,y+dy,rgb)
+                # for dx in range(-1, 2):
+                #     for dy in range(-1, 2):
+                #         self.setPixel(x+dx,y+dy,rgb)
+                self.setPixel(x,y,rgb)
     def draw(self, obj):
         rgb = BLACK
         if type(obj)==Triangle:
@@ -202,17 +211,86 @@ class World:
                 self.draw(el)
         
     def running(self): return self.runningg
+
+    def front(self): return self.forward
+    def back(self): return -self.forward
+    def left(self): return self.upward**self.forward
+    def right(self): return self.forward**self.upward
+    def up(self): return self.upward
+    def down(self): return -self.upward
+
+    def move(self, v): self.cam += v
+    def moveFront(self, d): self.move(self.front()*d)
+    def moveBack(self, d): self.move(self.back()*d)
+    def moveLeft(self, d): self.move(self.left()*d)
+    def moveRight(self, d): self.move(self.right()*d)
+    def moveUp(self, d): self.move(self.up()*d)
+    def moveDown(self, d): self.move(self.down()*d)
+
+    def rotateLeft(self, a): self.forward = self.front() * cos(a) + self.left() * sin(a)
+    def rotateRight(self, a): self.forward = self.front() * cos(a) + self.right() * sin(a)
+    def rotateUp(self, a):
+        self.upward = self.up() * cos(a) + self.back() * sin(a)
+        self.forward = self.front() * cos(a) + self.up() * sin(a)
+    def rotateDown(self, a):
+        self.upward = self.up() * cos(a) + self.front() * sin(a)
+        self.forward = self.front() * cos(a) + self.down() * sin(a)
+    
+    def rollLeft(self, a):
+        self.upward = self.up() * cos(a) + self.left() * sin(a)
+    def rollRight(self, a):
+        self.upward = self.up() * cos(a) + self.right() * sin(a)
+
     def update(self):
+        # print(pygame.mouse.get_pos())
+        self.clear()
+        t = time() - self.start
+        dt = t - self.time_last
+        self.time_last = t
+        camZ, camY = -self.forward, self.upward
+        camX = camY**camZ
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.runningg = False
                 return
-        self.clear()
-        t = (time() - self.start) % 3 +1
-        self.cam = V3(t, t, t)
-        translate = M4x4(1, 0, 0, -self.cam.x, 0, 1, 0, -self.cam.y, 0, 0, 1, -self.cam.z, 0, 0, 0, 1)
-        camZ, camY = -self.forward, self.upward
-        camX = camY**camZ
+
+        keys=pygame.key.get_pressed()
+        # print(keys)
+        if keys[pygame.K_a]:
+            self.moveLeft(dt * self.speed_move)
+        if keys[pygame.K_d]:
+            self.moveRight(dt * self.speed_move)
+        if keys[pygame.K_w]:
+            self.moveFront(dt * self.speed_move)
+        if keys[pygame.K_s]:
+            self.moveBack(dt * self.speed_move)
+        if keys[pygame.K_SPACE]:
+            self.moveUp(dt * self.speed_move)
+        if keys[pygame.K_LSHIFT]:
+            self.moveDown(dt * self.speed_move)
+        if keys[pygame.K_UP]:
+            self.rotateUp(dt * self.speed_rotate)
+        if keys[pygame.K_DOWN]:
+            self.rotateDown(dt * self.speed_rotate)
+        if keys[pygame.K_LEFT]:
+            self.rotateLeft(dt * self.speed_rotate)
+        if keys[pygame.K_RIGHT]:
+            self.rotateRight(dt * self.speed_rotate)
+        if keys[pygame.K_SLASH]:
+            self.rollLeft(dt * self.speed_rotate)
+        if keys[pygame.K_RSHIFT]:
+            self.rollRight(dt * self.speed_rotate)
+        if keys[pygame.K_z]:
+            self.zoom *= 1.1
+        if keys[pygame.K_x]:
+            self.zoom /= 1.1
+            
+        translate = M4x4(
+            1, 0, 0, -self.cam.x,
+            0, 1, 0, -self.cam.y,
+            0, 0, 1, -self.cam.z,
+            0, 0, 0, 1
+        )
         align = M4x4(
             camX.x, camX.y, camX.z, 0,
             camY.x, camY.y, camY.z, 0,
@@ -221,8 +299,8 @@ class World:
         )
 
         toCanonical = M4x4(
-            1 / self.ar / tan(self.fov/2), 0, 0, 0,
-            0, 1 / tan(self.fov/2), 0, 0,
+            self.zoom / self.ar / tan(self.fov/2), 0, 0, 0,
+            0, self.zoom / tan(self.fov/2), 0, 0,
             0, 0, (self.near+self.far)/(self.near-self.far), 2*self.far*self.near/(self.near-self.far),
             0, 0, -1, 0
         )
@@ -237,15 +315,49 @@ class World:
         for obj in self.objs:
             # print(obj)
             obj_transformed = obj.transformed(vertexShader)
-            print(obj_transformed)
             self.draw(obj_transformed)
+
+        
         surf = pygame.surfarray.make_surface(self.canvas.astype('uint8'))
         self.display.blit(surf, (0, 0))
+
+        
+        text_fps = self.font_m.render("FPS: {}".format(round(1/dt)), True, (0,0,0))
+        text_cam = self.font_s.render("Cam: {}".format(self.cam), True, (0,0,0))
+        text_front = self.font_s.render("Front: {}".format(self.front()), True, (0,0,0))
+        text_right = self.font_s.render("Right: {}".format(self.right()), True, (0,0,0))
+        text_up = self.font_s.render("Up: {}".format(self.up()), True, (0,0,0))
+
+        self.display.blit(text_fps, (20, 20))
+        self.display.blit(text_cam, (20, self.h - 80))
+        self.display.blit(text_front, (20, self.h - 60))
+        self.display.blit(text_right, (20, self.h - 40))
+        self.display.blit(text_up, (20, self.h - 20))
+
+        keyName = [
+            "MoveF", "MoveB", "MoveL", "MoveR", "MoveD", "MoveU",
+            "SpinU", "SpinD", "SpinL", "SpinR", "RollL", "RollR",
+            "ZoomIn", "ZoomOut"
+        ]
+        keyCode = [
+            pygame.K_w, pygame.K_s, pygame.K_a, pygame.K_d, pygame.K_LSHIFT, pygame.K_SPACE,
+            pygame.K_UP, pygame.K_DOWN, pygame.K_LEFT, pygame.K_RIGHT, pygame.K_SLASH, pygame.K_RSHIFT,
+            pygame.K_z, pygame.K_x
+        ]
+        keyPos = [
+            (180+10,30), (180+10,60), (210+10,60), (150+10,60), (210+10,90), (150+10,90),
+            (90,30), (90,60), (120,60), (60,60), (120,30), (60,30),
+            (120, 90), (80, 90)
+        ]
+        for i in range(len(keyName)):
+            txt = self.font_m.render(keyName[i], True, (255,0,0) if keys[keyCode[i]] else (0,0,0))
+            self.display.blit(txt, (self.w+60-keyPos[i][0]*2.5, keyPos[i][1]))
+
         pygame.display.update()
     def quit(self):
         pygame.quit()
 
-world = World((700, 400), "Homemade Graphics Engine!")
+world = World((800, 800), "Homemade Graphics Engine!")
 world.add(cube)
 while world.running():
     world.update()
