@@ -143,6 +143,10 @@ class World:
     def __init__(self, dimension, title="New Window"):
         self.objs = list()
         self.w, self.h = dimension[0], dimension[1]
+        self.ar = self.w / self.h
+        self.fov = radians(90)
+        self.near = 0.5
+        self.far = 10
         pygame.init()
         self.display = pygame.display.set_mode((self.w, self.h))
         pygame.display.set_caption(title)
@@ -204,14 +208,31 @@ class World:
                 self.runningg = False
                 return
         self.clear()
-        t = (time() - self.start) % 3
+        t = (time() - self.start) % 3 +1
         self.cam = V3(t, t, t)
         translate = M4x4(1, 0, 0, -self.cam.x, 0, 1, 0, -self.cam.y, 0, 0, 1, -self.cam.z, 0, 0, 0, 1)
         camZ, camY = -self.forward, self.upward
         camX = camY**camZ
-        align = M4x4(camX.x, camX.y, camX.z, 0, camY.x, camY.y, camY.z, 0, camZ.x, camZ.y, camZ.z, 0, 0, 0, 0, 1).t()
-        toScreen = M4x4(100, 0, 0, self.w/2, 0, 100, 0, self.h/2, 0, 0, 1, 0, 0, 0, -1, 1)
-        vertexShader = toScreen * align * translate
+        align = M4x4(
+            camX.x, camX.y, camX.z, 0,
+            camY.x, camY.y, camY.z, 0,
+            camZ.x, camZ.y, camZ.z, 0,
+            0, 0, 0, 1
+        )
+
+        toCanonical = M4x4(
+            1 / self.ar / tan(self.fov/2), 0, 0, 0,
+            0, 1 / tan(self.fov/2), 0, 0,
+            0, 0, (self.near+self.far)/(self.near-self.far), 2*self.far*self.near/(self.near-self.far),
+            0, 0, -1, 0
+        )
+        toScreen = M4x4(
+            self.w/2, 0, 0, self.w/2,
+            0, self.h/2, 0, self.h/2,
+            0, 0, 1, 0,
+            0, 0, 0, 1
+        )
+        vertexShader = toScreen * toCanonical * align * translate
         # vertexShader = toScreen * align
         for obj in self.objs:
             # print(obj)
